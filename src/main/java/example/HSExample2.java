@@ -24,7 +24,7 @@ public class HSExample2 {
 						(HSQuery) new HSFindQuery(CompareOperator.GE, Arrays.asList(""))
 								.in(0, Arrays.asList("1", "2")).limit(10),
 						(HSQuery) new HSFindQuery(CompareOperator.GE, Arrays.asList(""))
-								.filter(HS.FilterType.FILTER, CompareOperator.EQ, "v1", "1 v1 value").limit(10),
+								.filter("v1", CompareOperator.EQ, "1 v1 value").limit(10),
 //						(HSQuery) new HSInsertQuery(Arrays.asList("3 v1 value", "3 v2 text")),
 //						(HSQuery) new HSInsertQuery().values(Arrays.asList("4 v1 value", "4 v2 text"))
 						(HSQuery) new HSDeleteQuery(CompareOperator.EQ, Arrays.asList("3"), true)
