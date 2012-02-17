@@ -17,9 +17,6 @@ package kom.handlersocket.netty;
 
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.ChannelPipelineFactory;
-import io.netty.handler.codec.frame.DelimiterBasedFrameDecoder;
-import io.netty.handler.codec.frame.Delimiters;
-import io.netty.handler.codec.string.StringEncoder;
 import kom.handlersocket.HSConnection;
 
 import static io.netty.channel.Channels.pipeline;
@@ -38,16 +35,11 @@ public class HSPipelineFactory implements
 
     @Override
     public ChannelPipeline getPipeline() throws Exception {
-        // Create a default pipeline implementation.
         ChannelPipeline pipeline = pipeline();
-
-        // Add the text line codec combination first,
-        pipeline.addLast("packetCapture", new HSPacketCapture());
 
         pipeline.addLast("decoder", new HSDecoder());
         pipeline.addLast("encoder", new HSEncoder(connection.getCharset()));
 
-        // and then business logic.
         pipeline.addLast("handler", new HSHandler(connection));
 
         return pipeline;
