@@ -6,6 +6,7 @@ import io.netty.channel.ChannelFuture;
 import kom.handlersocket.query.HSAuthQuery;
 import kom.handlersocket.query.HSQuery;
 import kom.handlersocket.result.HSResultFuture;
+import kom.handlersocket.util.ByteStream;
 
 import java.nio.charset.Charset;
 import java.util.Arrays;
@@ -35,19 +36,20 @@ public class HSConnection {
 		return execute(indexDescriptor, Arrays.asList(query));
 	}
 
-	public synchronized HSResultFuture execute(HSIndexDescriptor indexDescriptor, List<HSQuery> queries) {		
-		StringBuilder packet = new StringBuilder(queries.size());
+	public synchronized HSResultFuture execute(HSIndexDescriptor indexDescriptor, List<HSQuery> queries) {
+		ByteStream packet = new ByteStream(queries.size() * 128, 65536, charset);
 
 		for (HSQuery query : queries) {
-			packet.append(query.encode(indexDescriptor));
+			query.encode(indexDescriptor, packet);
 		}
 
-		channel.write(packet.toString());
+		channel.write(packet);
+
 		return addResultFuture(queries);
 	}
 	
 	private HSResultFuture addResultFuture(List<HSQuery> queries) {
-		HSResultFuture resultFuture = new HSResultFuture(charset, queries);
+		HSResultFuture resultFuture = new HSResultFuture(queries, charset);
 		pendingResults.addFirst(resultFuture);
 		return resultFuture;
 	}

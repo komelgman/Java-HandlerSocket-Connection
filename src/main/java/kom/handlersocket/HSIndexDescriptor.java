@@ -15,8 +15,6 @@ public class HSIndexDescriptor {
 	protected final List<String> indexColumns;
 
 	protected static AtomicLong generator = new AtomicLong(0L);
-	protected String columnsImploded;
-	protected String filterColumnsImploded;
 
 	public HSIndexDescriptor(String dbName, String tableName, String indexName, List<String> columns) {
 		this(generator.incrementAndGet(), dbName, tableName, indexName, columns, null, null);
@@ -41,18 +39,12 @@ public class HSIndexDescriptor {
 	public HSIndexDescriptor(long indexId, String dbName, String tableName, String indexName, List<String> columns, List<String> filterColumns, List<String> indexColumns) {
 		this.indexId = Long.toString(indexId);
 
-		this.dbName = Util.safe(dbName);
-		this.tableName = Util.safe(tableName);
-		this.indexName = Util.safe(indexName);
+		this.dbName = dbName;
+		this.tableName = tableName;
+		this.indexName = indexName;
 
 		this.columns = columns;
-		this.columnsImploded = Util.safe(Util.implode(",", columns));
 		this.filterColumns = filterColumns;
-
-		if (isFilterColumns()) {
-			this.filterColumnsImploded = Util.safe(Util.implode(",", filterColumns));
-		}
-
 		this.indexColumns = indexColumns;
 	}
 
@@ -88,14 +80,6 @@ public class HSIndexDescriptor {
 		return filterColumns.indexOf(name);
 	}
 
-	public String getColumnsAsString() {
-		return columnsImploded;
-	}
-
-	public String getFilterColumnsAsString() {
-		return filterColumnsImploded;
-	}
-	
 	public boolean isFilterColumns() {
 		return filterColumns != null;
 	}

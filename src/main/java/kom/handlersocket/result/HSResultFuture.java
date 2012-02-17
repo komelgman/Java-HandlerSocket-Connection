@@ -18,7 +18,7 @@ public class HSResultFuture {
 	private Charset charset;
 
 
-	public HSResultFuture(Charset charset, List<HSQuery> queries) {
+	public HSResultFuture(List<HSQuery> queries, Charset charset) {
 		this.charset = charset;
 		this.queries = new LinkedList<HSQuery>(queries);
 	}

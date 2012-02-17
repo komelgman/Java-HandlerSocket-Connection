@@ -2,7 +2,10 @@ package kom.handlersocket.query;
 
 import kom.handlersocket.HS;
 import kom.handlersocket.HSIndexDescriptor;
+import kom.handlersocket.util.ByteStream;
 
+import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.security.InvalidParameterException;
 
 abstract public class HSQuery {
@@ -14,17 +17,17 @@ abstract public class HSQuery {
 		this.resultType = resultType;
 	}
 
-	public String encode(HSIndexDescriptor indexDescriptor){
+	public void encode(final HSIndexDescriptor indexDescriptor, final ByteStream output){
 		if (null == indexDescriptor) {
 			throw new InvalidParameterException("indexDescriptor can't be null");
 		}
 
 		this.indexDescriptor = indexDescriptor;
 
-		return encode();
+		encode(output);
 	}
 
-	abstract public String encode();
+	abstract public void encode(final ByteStream output);
 	
 	public HS.ResultType resultType() {
 		return resultType;

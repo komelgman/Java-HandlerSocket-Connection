@@ -32,22 +32,29 @@ public enum CompareOperator {
 	 *
 	 * @return
 	 */
-	public String getValue() {
+	public byte[] getValue() {
 		switch (this) {
 		case EQ:
-			return "=";
+			return OP_EQ;
 		case GT:
-			return ">";
+			return OP_GT;
 		case GE:
-			return ">=";
+			return OP_GE;
 		case LE:
-			return "<=";
+			return OP_LE;
 		case LT:
-			return "<";
+			return OP_LT;
 		case NE:
-			return "!=";
+			return OP_NE;
 		default:
 			throw new RuntimeException("Unknown find operator " + this);
 		}
 	}
+	
+	private static final byte[] OP_EQ = new byte[]{ '=' };
+	private static final byte[] OP_GT = new byte[]{ '>' };
+	private static final byte[] OP_GE = new byte[]{ '>', '=' };
+	private static final byte[] OP_LE = new byte[]{ '<', '=' };
+	private static final byte[] OP_LT = new byte[]{ '<' };
+	private static final byte[] OP_NE = new byte[]{ '!', '=' };
 }

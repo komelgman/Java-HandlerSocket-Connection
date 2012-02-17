@@ -1,8 +1,10 @@
 package kom.handlersocket.query;
 
 import kom.handlersocket.HS;
+import kom.handlersocket.util.ByteStream;
 import kom.handlersocket.util.Util;
 
+import java.io.IOException;
 import java.security.InvalidParameterException;
 import java.util.Arrays;
 import java.util.List;
@@ -23,27 +25,29 @@ public class HSDecrementQuery extends HSFindQuery {
 
 	public HSDecrementQuery(CompareOperator operator, List<String> conditions, List<String> values, boolean returnData) {
 		super(operator, conditions);
-		returnData(returnData);
+		this.values = values;
 
-		if (values != null) {
-			this.values = Util.implode(HS.TOKEN_DELIMITER_AS_STR, Util.safe(values));
-		}
+		returnData(returnData);
 	}
 
 	@Override
-	protected void modify(StringBuilder buffer) {
-		buffer.append(HS.TOKEN_DELIMITER_AS_STR);
-
-		if (HS.ResultType.MOD_OPERATION == resultType) {
-			buffer.append(HS.OPERATOR_DECREMENT);
-		} else if (HS.ResultType.FIND_OPERATION == resultType) {
-			buffer.append(HS.OPERATOR_GET_AND_DECREMENT);
-		} else {
-			throw new InvalidParameterException("invalid result type for DECREMENT operation");
+	protected void modify(ByteStream output) {
+		try {
+			output.writeBytes(HS.TOKEN_DELIMITER_AS_BYTES, false);
+	
+			if (HS.ResultType.MOD_OPERATION == resultType) {
+				output.writeBytes(HS.OPERATOR_DECREMENT, false);
+			} else if (HS.ResultType.FIND_OPERATION == resultType) {
+				output.writeBytes(HS.OPERATOR_GET_AND_DECREMENT, false);
+			} else {
+				throw new InvalidParameterException("invalid result type for DECREMENT operation");
+			}
+	
+			output.writeBytes(HS.TOKEN_DELIMITER_AS_BYTES, false);
+			output.writeStrings(values, HS.TOKEN_DELIMITER_AS_BYTES, true);
+		} catch (IOException e) {
+			System.err.print(e.getMessage());
 		}
-
-		buffer.append(HS.TOKEN_DELIMITER_AS_STR);
-		buffer.append(values);
 	}
 
 	@Override
@@ -52,7 +56,7 @@ public class HSDecrementQuery extends HSFindQuery {
 			throw new InvalidParameterException("values can't be null");
 		}
 
-		this.values = Util.implode(HS.TOKEN_DELIMITER_AS_STR, Util.safe(values));
+		this.values = values;
 
 		return this;
 	}

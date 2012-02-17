@@ -1,15 +1,16 @@
 package kom.handlersocket.query;
 
 import kom.handlersocket.HS;
+import kom.handlersocket.util.ByteStream;
 import kom.handlersocket.util.Util;
 
+import java.io.IOException;
 import java.security.InvalidParameterException;
 import java.util.List;
 
 public class HSInsertQuery extends HSQuery {
 
-	protected String values;
-	protected int valuesCount = 0;
+	protected List<String> values;
 
 	public HSInsertQuery() {
 		this(null);
@@ -17,15 +18,11 @@ public class HSInsertQuery extends HSQuery {
 
 	public HSInsertQuery(List<String> values) {
 		super(HS.ResultType.INSERT_OPERATION);
-		
-		if (values != null) {
-			this.valuesCount = values.size();
-			this.values = Util.implode(HS.TOKEN_DELIMITER_AS_STR, Util.safe(values));
-		}
+		this.values = values;
 	}
 
 	@Override
-	public String encode() {
+	public void encode(ByteStream output) {
 		if (null == values) {
 			throw new InvalidParameterException("values can't be null");
 		}
@@ -33,19 +30,19 @@ public class HSInsertQuery extends HSQuery {
 		if (null == indexDescriptor) {
 			throw new InvalidParameterException("indexDescriptor can't be null");
 		}
-
-		StringBuilder result = new StringBuilder();
-
-		result.append(indexDescriptor.getIndexId());
-		result.append(HS.TOKEN_DELIMITER_AS_STR);
-		result.append(HS.OPERATOR_INSERT);
-		result.append(HS.TOKEN_DELIMITER_AS_STR);
-		result.append(valuesCount);
-		result.append(HS.TOKEN_DELIMITER_AS_STR);
-		result.append(values);
-		result.append(HS.PACKET_DELIMITER_AS_STR);
-
-		return result.toString();
+		
+		try {
+			output.writeString(indexDescriptor.getIndexId(), false);
+			output.writeBytes(HS.TOKEN_DELIMITER_AS_BYTES, false);
+			output.writeBytes(HS.OPERATOR_INSERT, false);
+			output.writeBytes(HS.TOKEN_DELIMITER_AS_BYTES, false);
+			output.writeString(String.valueOf(values.size()), false);
+			output.writeBytes(HS.TOKEN_DELIMITER_AS_BYTES, false);
+			output.writeStrings(values, HS.TOKEN_DELIMITER_AS_BYTES, true);
+			output.writeBytes(HS.PACKET_DELIMITER_AS_BYTES, false);
+		} catch (IOException e) {
+			System.err.print(e.getMessage());
+		}
 	}
 
 	public HSInsertQuery values(List<String> values) {
@@ -53,8 +50,7 @@ public class HSInsertQuery extends HSQuery {
 			throw new InvalidParameterException("values can't be null");
 		}
 
-		this.valuesCount = values.size();
-		this.values = Util.implode(HS.TOKEN_DELIMITER_AS_STR, Util.safe(values));
+		this.values = values;
 
 		return this;
 	}

@@ -7,6 +7,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.oneone.OneToOneDecoder;
 import kom.handlersocket.HS;
 
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,6 +18,8 @@ public class HSDecoder extends OneToOneDecoder {
         if (!(msg instanceof ChannelBuffer)) {
             return msg;
         }
+
+	    System.out.print(((ChannelBuffer) msg).toString(Charset.defaultCharset()));
 	    
         return decodePacket((ChannelBuffer) msg);
     }
@@ -57,12 +60,12 @@ public class HSDecoder extends OneToOneDecoder {
 		return result;
 	}
 
-	private ChannelBuffer copy(ChannelBuffer buffer, int prevIndex, int curIndex, boolean unsafe) {
+	private ChannelBuffer copy(final ChannelBuffer buffer, final int prevIndex, final int curIndex, final boolean unsafe) {
 		byte symbol;
 		boolean flag = false;
 
 		if (unsafe) {
-			byte[] bytes = new byte[curIndex - prevIndex - 1];
+			final byte[] bytes = new byte[curIndex - prevIndex - 1];
 			int count = 0;
 
 			for(int i = prevIndex; i < curIndex - 1; ++i) {
@@ -77,7 +80,7 @@ public class HSDecoder extends OneToOneDecoder {
 				flag = false;
 			}
 
-			return ChannelBuffers.wrappedBuffer(bytes, 0, count);
+			return ChannelBuffers.copiedBuffer(bytes, 0, count);
 		} else {
 			return buffer.copy(prevIndex, curIndex - prevIndex - 1);
 		}

@@ -1,7 +1,9 @@
 package kom.handlersocket.query;
 
 import kom.handlersocket.HS;
+import kom.handlersocket.util.ByteStream;
 
+import java.io.IOException;
 import java.security.InvalidParameterException;
 import java.util.Arrays;
 import java.util.List;
@@ -26,15 +28,20 @@ public class HSDeleteQuery extends HSFindQuery {
 	}
 	
 	@Override
-	protected void modify(StringBuilder buffer) {
-		buffer.append(HS.TOKEN_DELIMITER_AS_STR);
-		
-		if (HS.ResultType.MOD_OPERATION == resultType) {			
-			buffer.append(HS.OPERATOR_DELETE);
-		} else if (HS.ResultType.FIND_OPERATION == resultType) {
-			buffer.append(HS.OPERATOR_GET_AND_DELETE);
-		} else {
-			throw new InvalidParameterException("invalid result type for DELETE operation");
+	protected void modify(ByteStream output) {
+		try {
+			output.writeBytes(HS.TOKEN_DELIMITER_AS_BYTES, false);
+
+			if (HS.ResultType.MOD_OPERATION == resultType) {
+				output.writeBytes(HS.OPERATOR_DELETE, false);
+			} else if (HS.ResultType.FIND_OPERATION == resultType) {
+				output.writeBytes(HS.OPERATOR_GET_AND_DELETE, false);
+			} else {
+				throw new InvalidParameterException("invalid result type for DELETE operation");
+			}
+
+		} catch (IOException e) {
+			System.err.print(e.getMessage());
 		}
 	}
 }

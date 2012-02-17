@@ -2,8 +2,11 @@ package kom.handlersocket.query;
 
 import kom.handlersocket.HS;
 import kom.handlersocket.HSIndexDescriptor;
+import kom.handlersocket.util.ByteStream;
 import kom.handlersocket.util.Util;
 
+import java.io.IOException;
+import java.nio.charset.Charset;
 import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -12,8 +15,7 @@ import java.util.List;
 public class HSFindQuery extends HSQuery {
 
 	protected CompareOperator operator = null;
-	protected int conditionsCount = 0;
-	protected String conditions = null;
+	protected List<String> conditions = null;
 
 	// extra params
 	// LIM
@@ -22,14 +24,13 @@ public class HSFindQuery extends HSQuery {
 
 	// [IN]
 	protected int INIndexNumber = 0;
-	protected int INIndexValuesCount = 0;
-	protected String INIndexValues = null;
+	protected List<String> INIndexValues = null;
 
 	// [FILTER]
 	protected List<Filter> filters = new ArrayList<Filter>();
 
 	// [MOD]
-	protected String values;
+	protected List<String> values;
 
 	public HSFindQuery() {
 		this(CompareOperator.GE, Arrays.asList(""));
@@ -40,14 +41,13 @@ public class HSFindQuery extends HSQuery {
 			
 		if (conditions != null) {			
 			this.operator = operator;
-			this.conditionsCount = conditions.size();
-			this.conditions = Util.implode(HS.TOKEN_DELIMITER_AS_STR, Util.safe(conditions));
+			this.conditions = conditions;
 		}
 	}
 
 	@Override
-	public String encode() {
-		if (this.conditionsCount == 0) {
+	public void encode(final ByteStream output) {
+		if (this.conditions == null) {
 			throw new InvalidParameterException("invalid conditions");
 		}
 
@@ -55,58 +55,59 @@ public class HSFindQuery extends HSQuery {
 			throw new InvalidParameterException("indexDescriptor can't be null");
 		}
 
-		StringBuilder result = new StringBuilder();
+		try {
+			output.writeString(indexDescriptor.getIndexId(), false);
+			output.writeBytes(HS.TOKEN_DELIMITER_AS_BYTES, false);
 
-		result.append(indexDescriptor.getIndexId());
-		result.append(HS.TOKEN_DELIMITER_AS_STR);
+			output.writeBytes(operator.getValue(), false);
+			output.writeBytes(HS.TOKEN_DELIMITER_AS_BYTES, false);
 
-		result.append(operator.getValue());
-		result.append(HS.TOKEN_DELIMITER_AS_STR);
+			output.writeString(String.valueOf(conditions.size()), false);
+			output.writeBytes(HS.TOKEN_DELIMITER_AS_BYTES, false);
 
-		result.append(conditionsCount);
-		result.append(HS.TOKEN_DELIMITER_AS_STR);
+			output.writeStrings(conditions, HS.TOKEN_DELIMITER_AS_BYTES, true);
+			output.writeBytes(HS.TOKEN_DELIMITER_AS_BYTES, false);
 
-		result.append(conditions);
-		result.append(HS.TOKEN_DELIMITER_AS_STR);
+			output.writeString(String.valueOf(limit), false);
+			output.writeBytes(HS.TOKEN_DELIMITER_AS_BYTES, false);
 
-		result.append(limit);
-		result.append(HS.TOKEN_DELIMITER_AS_STR);
+			output.writeString(String.valueOf(offset), false);
 
-		result.append(offset);
-
-		if (INIndexValuesCount > 0) {
-			result.append(HS.TOKEN_DELIMITER_AS_STR);
-			result.append(HS.OPERATOR_IN);
-			result.append(HS.TOKEN_DELIMITER_AS_STR);
-
-			result.append(INIndexNumber);
-			result.append(HS.TOKEN_DELIMITER_AS_STR);
-
-			result.append(INIndexValuesCount);
-			result.append(HS.TOKEN_DELIMITER_AS_STR);
-
-			result.append(INIndexValues);
-		}
-
-		if (filters.size() > 0) {
-			for (Filter filter : filters) {
-				filter.encode(result);
+			if (INIndexValues != null) {
+				output.writeBytes(HS.TOKEN_DELIMITER_AS_BYTES, false);
+				output.writeBytes(HS.OPERATOR_IN, false);
+				output.writeBytes(HS.TOKEN_DELIMITER_AS_BYTES, false);
+	
+				output.writeString(String.valueOf(INIndexNumber), false);
+				output.writeBytes(HS.TOKEN_DELIMITER_AS_BYTES, false);
+					
+				output.writeString(String.valueOf(INIndexValues.size()), false);				
+				output.writeBytes(HS.TOKEN_DELIMITER_AS_BYTES, false);
+	
+				output.writeStrings(INIndexValues, HS.TOKEN_DELIMITER_AS_BYTES, true);
 			}
+	
+			if (filters.size() > 0) {
+				for (Filter filter : filters) {
+					filter.encode(output);
+				}
+			}
+	
+			// [MOD]
+			modify(output);
+	
+			output.writeBytes(HS.PACKET_DELIMITER_AS_BYTES, false);
+			
+		} catch (IOException e) {
+			System.err.print(e.getMessage());
 		}
-
-		// [MOD]
-		modify(result);
-
-		result.append(HS.PACKET_DELIMITER_AS_STR);
-
-		return result.toString();
 	}
 
 	public HSFindQuery values(List<String> values) {
 		throw new UnsupportedOperationException("can't perform this operation");
 	}
 
-	protected void modify(StringBuilder buffer) {
+	protected void modify(ByteStream output) {
 		// nothing, override in modify operations
 	}
 
@@ -130,12 +131,10 @@ public class HSFindQuery extends HSQuery {
 		}
 
 		this.operator = operator;
-		this.conditionsCount = conditions.size();
-		this.conditions = Util.implode(HS.TOKEN_DELIMITER_AS_STR, Util.safe(conditions));
+		this.conditions = conditions;
 
 		return this;
 	}
-
 
 	public HSFindQuery limit(int limit) {
 		if (limit < 1) {
@@ -157,8 +156,7 @@ public class HSFindQuery extends HSQuery {
 	
 	public HSFindQuery in(int indexFieldNumber, List<String> conditions) {
 		INIndexNumber = indexFieldNumber;
-		INIndexValuesCount = conditions.size();
-		INIndexValues = Util.implode(HS.TOKEN_DELIMITER_AS_STR, Util.safe(conditions));
+		INIndexValues = conditions;
 		return this;
 	}
 	
@@ -177,13 +175,11 @@ public class HSFindQuery extends HSQuery {
 		
 		INIndexNumber = 0;
 		INIndexValues = null;
-		INIndexValuesCount = 0;
 		
 		limit = 1;
 		offset = 0;
 
 		conditions = null;
-		conditionsCount = 0;
 		operator = null;
 	}
 
@@ -195,23 +191,27 @@ public class HSFindQuery extends HSQuery {
 		public final String value;
 		
 		public Filter(HS.FilterType type, CompareOperator operator, String column, String value) {
-			this.value = Util.safe(value);
+			this.value = value;
 			this.operator = operator;
 			this.type = type;
 			this.column = column;
 		}
 		
-		public void encode(StringBuilder builder) {			
+		public void encode(ByteStream output) {			
 			validate();
 
-			builder.append(HS.TOKEN_DELIMITER_AS_STR);
-			builder.append(type.getValue());
-			builder.append(HS.TOKEN_DELIMITER_AS_STR);
-			builder.append(operator.getValue());
-			builder.append(HS.TOKEN_DELIMITER_AS_STR);
-			builder.append(indexDescriptor.getFilterColumnIndex(column));
-			builder.append(HS.TOKEN_DELIMITER_AS_STR);
-			builder.append(value);
+			try {
+				output.writeBytes(HS.TOKEN_DELIMITER_AS_BYTES, false);
+				output.writeBytes(type.getValue(), false);
+				output.writeBytes(HS.TOKEN_DELIMITER_AS_BYTES, false);
+				output.writeBytes(operator.getValue(), false);
+				output.writeBytes(HS.TOKEN_DELIMITER_AS_BYTES, false);
+				output.writeString(String.valueOf(indexDescriptor.getFilterColumnIndex(column)), false);
+				output.writeBytes(HS.TOKEN_DELIMITER_AS_BYTES, false);
+				output.writeString(value, true);			
+			} catch (IOException e) {
+				System.err.print(e.getMessage());
+			}			
 		}
 		
 		private void validate() {

@@ -2,6 +2,7 @@ package kom.handlersocket.result;
 
 import io.netty.buffer.ChannelBuffer;
 import kom.handlersocket.query.HSQuery;
+import kom.handlersocket.util.ByteStream;
 
 import java.nio.charset.Charset;
 import java.util.HashMap;
@@ -23,8 +24,12 @@ public class HSResult {
 	}
 
 	public void debug() {
-		for(Map.Entry<HSQuery, List<ChannelBuffer>> entry : resultSet.entrySet()) {
-			System.out.print(entry.getKey().encode());
+		ByteStream output = new ByteStream(1024, 65536, charset);
+		
+		for(Map.Entry<HSQuery, List<ChannelBuffer>> entry : resultSet.entrySet()) {				
+			entry.getKey().encode(output);
+			System.out.print(new String(output.toByteArray(), charset));
+			output.reset();
 
 			for(ChannelBuffer buffer : entry.getValue()) {
 				System.out.print(buffer.toString(charset));
