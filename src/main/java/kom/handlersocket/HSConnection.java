@@ -1,3 +1,21 @@
+/*
+ * Copyright 2012 The Java HandlerSocket Connection Project
+ *
+ * https://github.com/komelgman/Java-HandlerSocket-Connection/
+ *
+ * The Project licenses this file to you under the Apache License,
+ * version 2.0 (the "License"); you may not use this file except in compliance
+ * with the License. You may obtain a copy of the License at:
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ */
+
 package kom.handlersocket;
 
 import io.netty.buffer.ChannelBuffer;
@@ -6,7 +24,7 @@ import io.netty.channel.ChannelFuture;
 import kom.handlersocket.query.HSAuthQuery;
 import kom.handlersocket.query.HSQuery;
 import kom.handlersocket.result.HSResultFuture;
-import kom.handlersocket.util.ByteStream;
+import kom.handlersocket.core.SafeByteStream;
 
 import java.nio.charset.Charset;
 import java.util.Arrays;
@@ -16,7 +34,7 @@ import java.util.List;
 public class HSConnection {
 	private Channel channel;
 	private Charset charset;
-	
+
 	private LinkedList<HSResultFuture> pendingResults = new LinkedList<HSResultFuture>();
 	private HSResultFuture currentResultFuture = null;
 
@@ -29,7 +47,7 @@ public class HSConnection {
 	}
 
 	public synchronized HSResultFuture execute(HSAuthQuery query) {
-		return execute(null, Arrays.asList((HSQuery)query));
+		return execute(null, Arrays.asList((HSQuery) query));
 	}
 
 	public synchronized HSResultFuture execute(HSIndexDescriptor indexDescriptor, HSQuery query) {
@@ -37,7 +55,7 @@ public class HSConnection {
 	}
 
 	public synchronized HSResultFuture execute(HSIndexDescriptor indexDescriptor, List<HSQuery> queries) {
-		ByteStream packet = new ByteStream(queries.size() * 128, 65536, charset);
+		final SafeByteStream packet = new SafeByteStream(queries.size() * 128, 65536, charset);
 
 		for (HSQuery query : queries) {
 			query.encode(indexDescriptor, packet);
@@ -47,7 +65,7 @@ public class HSConnection {
 
 		return addResultFuture(queries);
 	}
-	
+
 	private HSResultFuture addResultFuture(List<HSQuery> queries) {
 		HSResultFuture resultFuture = new HSResultFuture(queries, charset);
 		pendingResults.addFirst(resultFuture);

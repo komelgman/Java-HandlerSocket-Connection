@@ -4,10 +4,10 @@ import kom.handlersocket.*;
 import kom.handlersocket.query.*;
 import kom.handlersocket.result.HSResult;
 import kom.handlersocket.result.HSResultFuture;
+import kom.handlersocket.core.CompareOperator;
 
 import java.nio.charset.Charset;
 import java.util.Arrays;
-import java.util.List;
 
 public class HSExample2 {
 	public static void main(String[] args) throws Exception {

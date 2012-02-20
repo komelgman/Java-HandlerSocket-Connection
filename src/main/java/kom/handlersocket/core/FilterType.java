@@ -16,9 +16,20 @@
  * under the License.
  */
 
-package kom.handlersocket;
+package kom.handlersocket.core;
 
-public enum HSConnectionMode {
-	READ_ONLY,
-	READ_WRITE
+public enum FilterType {
+	FILTER,
+	WHILE;
+
+	public byte[] getValue() {
+		switch (this) {
+			case FILTER:
+				return HSProto.OPERATOR_FILTER;
+			case WHILE:
+				return HSProto.OPERATOR_WHILE;
+			default:
+				throw new RuntimeException("Unknown find operator " + this);
+		}
+	}
 }

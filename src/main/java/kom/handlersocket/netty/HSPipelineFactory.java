@@ -1,7 +1,9 @@
 /*
- * Copyright 2011 The Netty Project
+ * Copyright 2012 The Java HandlerSocket Connection Project
  *
- * The Netty Project licenses this file to you under the Apache License,
+ * https://github.com/komelgman/Java-HandlerSocket-Connection/
+ *
+ * The Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
  * with the License. You may obtain a copy of the License at:
  *
@@ -25,7 +27,7 @@ import static io.netty.channel.Channels.pipeline;
  * Creates a newly configured {@link io.netty.channel.ChannelPipeline} for a new channel.
  */
 public class HSPipelineFactory implements
-        ChannelPipelineFactory {
+		ChannelPipelineFactory {
 
 	private final HSConnection connection;
 
@@ -33,15 +35,15 @@ public class HSPipelineFactory implements
 		this.connection = connection;
 	}
 
-    @Override
-    public ChannelPipeline getPipeline() throws Exception {
-        ChannelPipeline pipeline = pipeline();
+	@Override
+	public ChannelPipeline getPipeline() throws Exception {
+		ChannelPipeline pipeline = pipeline();
 
-        pipeline.addLast("decoder", new HSDecoder());
-        pipeline.addLast("encoder", new HSEncoder(connection.getCharset()));
+		pipeline.addLast("decoder", new HSDecoder());
+		pipeline.addLast("encoder", new HSEncoder(connection.getCharset()));
 
-        pipeline.addLast("handler", new HSHandler(connection));
+		pipeline.addLast("handler", new HSHandler(connection));
 
-        return pipeline;
-    }
+		return pipeline;
+	}
 }

@@ -16,9 +16,11 @@
  * under the License.
  */
 
-package kom.handlersocket;
+package kom.handlersocket.core;
 
-public enum HSConnectionMode {
-	READ_ONLY,
-	READ_WRITE
+public enum ResultType {
+	SIMPLE,
+	MOD_OPERATION,
+	FIND_OPERATION,
+	INSERT_OPERATION
 }

@@ -1,12 +1,28 @@
-package kom.handlersocket.util;
+/*
+ * Copyright 2012 The Java HandlerSocket Connection Project
+ *
+ * https://github.com/komelgman/Java-HandlerSocket-Connection/
+ *
+ * The Project licenses this file to you under the Apache License,
+ * version 2.0 (the "License"); you may not use this file except in compliance
+ * with the License. You may obtain a copy of the License at:
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ */
 
-import kom.handlersocket.HS;
+package kom.handlersocket.core;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.List;
 
-public class ByteStream {
+public class SafeByteStream {
 	private final int maximumBufferIncrement;
 	private final int initialBufferSize;
 	private final Charset charset;
@@ -15,26 +31,23 @@ public class ByteStream {
 
 	private byte[] buffer;
 	private byte[] unsafeBuffer;
-	private byte[] smallBuffer;
 
-	public ByteStream(final int bufferSize, final int maximumBufferIncrement, Charset charset) {
+	public SafeByteStream(final int bufferSize, final int maximumBufferIncrement, Charset charset) {
 		this.maximumBufferIncrement = maximumBufferIncrement;
 		this.initialBufferSize = bufferSize;
 		this.charset = charset;
 
 		this.buffer = new byte[bufferSize];
 		this.unsafeBuffer = new byte[2];
-		this.unsafeBuffer[0] = HS.UNSAFE_BYTE_MARKER;
-		this.smallBuffer = new byte[8];
+		this.unsafeBuffer[0] = HSProto.UNSAFE_BYTE_MARKER;
 	}
 
 	public synchronized void writeByte(byte b, boolean safe) {
-		unsafeBuffer[1] = (byte) (0xFF & b);
-
-		if (safe && unsafeBuffer[1] < 0x10) {
-			unsafeBuffer[1] ^= HS.UNSAFE_BYTE_MASK;
+		if (safe && /*unsigned*/ (0xFF & b) < 0x10) {
+			unsafeBuffer[1] = (byte) (b ^ HSProto.UNSAFE_BYTE_MASK);
 			_write(unsafeBuffer, 0, 2, false);
 		} else {
+			unsafeBuffer[1] = b;
 			_write(unsafeBuffer, 1, 1, false);
 		}
 	}
@@ -43,15 +56,16 @@ public class ByteStream {
 		_write(b, 0, b.length, safe);
 	}
 
-	public synchronized void writeBytes(final byte[] b, final int offset, final int length, boolean safe) throws IOException {
+	public synchronized void writeBytes(final byte[] b, final int offset, final int length, boolean safe)
+			throws IOException {
 		_write(b, offset, length, safe);
 	}
-	
+
 	public synchronized void writeString(String str, boolean safe) throws IOException {
 		final byte[] b = str.getBytes(charset);
 		_write(b, 0, b.length, safe);
 	}
-	
+
 	public synchronized void writeStrings(List<String> strings, byte[] delimiter, boolean safe) {
 		int count = strings.size();
 		byte[] b;
@@ -64,16 +78,6 @@ public class ByteStream {
 			}
 		}
 	}
-
-//	public synchronized void writeInt(int b, boolean safe) {
-//		smallBuffer[0] = (byte)( b >> 24 );
-//		smallBuffer[1] = (byte)( b >> 16 );
-//		smallBuffer[2] = (byte)( b >> 8 );
-//		smallBuffer[3] = (byte)( b >> 0 );
-//
-//		_write(smallBuffer, 0, 4, safe);
-//	}
-
 
 	private void _write(final byte[] bytes, final int offset, final int length, boolean safe) {
 		if (length < 0) {
@@ -94,12 +98,12 @@ public class ByteStream {
 				ensureSize(cursor + 2 * length);
 			}
 
-			for(int i = offset; i < offset + length; ++i) {
+			for (int i = offset; i < offset + length; ++i) {
 				byte b = bytes[i];
 
 				if (/*unsigned*/ (b & 0xFF) < 0x10) {
-					buffer[cursor++] = HS.UNSAFE_BYTE_MARKER;
-					buffer[cursor++] = (byte) (b ^ HS.UNSAFE_BYTE_MASK);
+					buffer[cursor++] = HSProto.UNSAFE_BYTE_MARKER;
+					buffer[cursor++] = (byte) (b ^ HSProto.UNSAFE_BYTE_MASK);
 				} else {
 					buffer[cursor++] = b;
 				}
@@ -120,22 +124,14 @@ public class ByteStream {
 	}
 
 	private void ensureSize(final int size) {
-		final int computedSize = (int)Math.min((this.buffer.length + 1) * 1.5, this.buffer.length + maximumBufferIncrement);
+		final int computedSize = (int) Math.min((this.buffer.length + 1) * 1.5, this.buffer.length
+				+ maximumBufferIncrement);
 		final int newSize = Math.max(size, computedSize);
 		final byte[] newBuffer = new byte[newSize];
 
 		System.arraycopy(this.buffer, 0, newBuffer, 0, cursor);
 
 		this.buffer = newBuffer;
-	}
-
-	public void flush() throws IOException {
-		if ((buffer.length - cursor) > 50000) {
-			System.out.println("WASTED: " + (buffer.length - cursor));
-		}
-	}
-
-	public void close() throws IOException {
 	}
 
 	public synchronized byte[] toByteArray() {
@@ -152,7 +148,7 @@ public class ByteStream {
 		if ((buffer.length - cursor) > 50000) {
 			System.out.println("WASTED: " + (buffer.length - cursor) + " Length: " + buffer.length);
 		}
-		
+
 		return buffer;
 	}
 }

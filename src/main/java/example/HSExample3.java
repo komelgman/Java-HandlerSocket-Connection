@@ -7,6 +7,7 @@ import kom.handlersocket.HSIndexDescriptor;
 import kom.handlersocket.query.*;
 import kom.handlersocket.result.HSResult;
 import kom.handlersocket.result.HSResultFuture;
+import kom.handlersocket.core.CompareOperator;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -29,9 +30,10 @@ public class HSExample3 {
 		long start = System.currentTimeMillis();
 		System.out.println("start");
 		HSFindQuery findQuery = new HSFindQuery();
+		HSInsertQuery insertQuery = new HSInsertQuery();
 
 		for (int i = 0; i < 2000; ++i) {
-			resultFuture = connection.execute(indexDescriptor1, findQuery.where(CompareOperator.EQ, Arrays.asList(String.valueOf(i))));
+			resultFuture = connection.execute(indexDescriptor1, insertQuery.values(Arrays.asList(String.valueOf(i) + " values", String.valueOf(i) + "текст по русски")));
 			result = resultFuture.get();
 			//result.debug();
 		}

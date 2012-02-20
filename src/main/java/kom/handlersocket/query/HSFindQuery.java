@@ -1,12 +1,27 @@
+/*
+ * Copyright 2012 The Java HandlerSocket Connection Project
+ *
+ * https://github.com/komelgman/Java-HandlerSocket-Connection/
+ *
+ * The Project licenses this file to you under the Apache License,
+ * version 2.0 (the "License"); you may not use this file except in compliance
+ * with the License. You may obtain a copy of the License at:
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ */
+
 package kom.handlersocket.query;
 
-import kom.handlersocket.HS;
-import kom.handlersocket.HSIndexDescriptor;
-import kom.handlersocket.util.ByteStream;
-import kom.handlersocket.util.Util;
+import kom.handlersocket.core.HSProto;
+import kom.handlersocket.core.*;
 
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -37,16 +52,16 @@ public class HSFindQuery extends HSQuery {
 	}
 
 	public HSFindQuery(CompareOperator operator, List<String> conditions) {
-		super(HS.ResultType.FIND_OPERATION);
-			
-		if (conditions != null) {			
+		super(ResultType.FIND_OPERATION);
+
+		if (conditions != null) {
 			this.operator = operator;
 			this.conditions = conditions;
 		}
 	}
 
 	@Override
-	public void encode(final ByteStream output) {
+	public void encode(final SafeByteStream output) {
 		if (this.conditions == null) {
 			throw new InvalidParameterException("invalid conditions");
 		}
@@ -57,47 +72,47 @@ public class HSFindQuery extends HSQuery {
 
 		try {
 			output.writeString(indexDescriptor.getIndexId(), false);
-			output.writeBytes(HS.TOKEN_DELIMITER_AS_BYTES, false);
+			output.writeBytes(HSProto.TOKEN_DELIMITER_AS_BYTES, false);
 
 			output.writeBytes(operator.getValue(), false);
-			output.writeBytes(HS.TOKEN_DELIMITER_AS_BYTES, false);
+			output.writeBytes(HSProto.TOKEN_DELIMITER_AS_BYTES, false);
 
 			output.writeString(String.valueOf(conditions.size()), false);
-			output.writeBytes(HS.TOKEN_DELIMITER_AS_BYTES, false);
+			output.writeBytes(HSProto.TOKEN_DELIMITER_AS_BYTES, false);
 
-			output.writeStrings(conditions, HS.TOKEN_DELIMITER_AS_BYTES, true);
-			output.writeBytes(HS.TOKEN_DELIMITER_AS_BYTES, false);
+			output.writeStrings(conditions, HSProto.TOKEN_DELIMITER_AS_BYTES, true);
+			output.writeBytes(HSProto.TOKEN_DELIMITER_AS_BYTES, false);
 
 			output.writeString(String.valueOf(limit), false);
-			output.writeBytes(HS.TOKEN_DELIMITER_AS_BYTES, false);
+			output.writeBytes(HSProto.TOKEN_DELIMITER_AS_BYTES, false);
 
 			output.writeString(String.valueOf(offset), false);
 
 			if (INIndexValues != null) {
-				output.writeBytes(HS.TOKEN_DELIMITER_AS_BYTES, false);
-				output.writeBytes(HS.OPERATOR_IN, false);
-				output.writeBytes(HS.TOKEN_DELIMITER_AS_BYTES, false);
-	
+				output.writeBytes(HSProto.TOKEN_DELIMITER_AS_BYTES, false);
+				output.writeBytes(HSProto.OPERATOR_IN, false);
+				output.writeBytes(HSProto.TOKEN_DELIMITER_AS_BYTES, false);
+
 				output.writeString(String.valueOf(INIndexNumber), false);
-				output.writeBytes(HS.TOKEN_DELIMITER_AS_BYTES, false);
-					
-				output.writeString(String.valueOf(INIndexValues.size()), false);				
-				output.writeBytes(HS.TOKEN_DELIMITER_AS_BYTES, false);
-	
-				output.writeStrings(INIndexValues, HS.TOKEN_DELIMITER_AS_BYTES, true);
+				output.writeBytes(HSProto.TOKEN_DELIMITER_AS_BYTES, false);
+
+				output.writeString(String.valueOf(INIndexValues.size()), false);
+				output.writeBytes(HSProto.TOKEN_DELIMITER_AS_BYTES, false);
+
+				output.writeStrings(INIndexValues, HSProto.TOKEN_DELIMITER_AS_BYTES, true);
 			}
-	
+
 			if (filters.size() > 0) {
 				for (Filter filter : filters) {
 					filter.encode(output);
 				}
 			}
-	
+
 			// [MOD]
 			modify(output);
-	
-			output.writeBytes(HS.PACKET_DELIMITER_AS_BYTES, false);
-			
+
+			output.writeBytes(HSProto.PACKET_DELIMITER_AS_BYTES, false);
+
 		} catch (IOException e) {
 			System.err.print(e.getMessage());
 		}
@@ -107,14 +122,13 @@ public class HSFindQuery extends HSQuery {
 		throw new UnsupportedOperationException("can't perform this operation");
 	}
 
-	protected void modify(ByteStream output) {
+	protected void modify(SafeByteStream output) {
 		// nothing, override in modify operations
 	}
-
 	protected void returnData(boolean value) {
 		resultType = value
-			? HS.ResultType.FIND_OPERATION
-			: HS.ResultType.MOD_OPERATION;
+				? ResultType.FIND_OPERATION
+				: ResultType.MOD_OPERATION;
 	}
 
 	public HSFindQuery where(CompareOperator operator, List<String> conditions) {
@@ -140,42 +154,42 @@ public class HSFindQuery extends HSQuery {
 		if (limit < 1) {
 			throw new IllegalArgumentException("limit must be ONE ore greater");
 		}
-		
+
 		this.limit = limit;
 		return this;
 	}
-	
+
 	public HSFindQuery offset(int offset) {
 		if (limit < 0) {
 			throw new IllegalArgumentException("limit must be ZERO ore greater");
 		}
-		
+
 		this.offset = offset;
 		return this;
 	}
-	
+
 	public HSFindQuery in(int indexFieldNumber, List<String> conditions) {
 		INIndexNumber = indexFieldNumber;
 		INIndexValues = conditions;
 		return this;
 	}
-	
+
 	public HSFindQuery filter(String column, CompareOperator operator, String value) {
-		filters.add(new Filter(HS.FilterType.FILTER, operator, column, value));
+		filters.add(new Filter(FilterType.FILTER, operator, column, value));
 		return this;
 	}
 
 	public HSFindQuery till(String column, CompareOperator operator, String value) {
-		filters.add(new Filter(HS.FilterType.WHILE, operator, column, value));
+		filters.add(new Filter(FilterType.WHILE, operator, column, value));
 		return this;
 	}
-	
+
 	public void reset() {
 		filters.clear();
-		
+
 		INIndexNumber = 0;
 		INIndexValues = null;
-		
+
 		limit = 1;
 		offset = 0;
 
@@ -185,35 +199,35 @@ public class HSFindQuery extends HSQuery {
 
 
 	class Filter {
-		public final HS.FilterType type;
+		public final FilterType type;
 		public final CompareOperator operator;
 		public final String column;
 		public final String value;
-		
-		public Filter(HS.FilterType type, CompareOperator operator, String column, String value) {
+
+		public Filter(FilterType type, CompareOperator operator, String column, String value) {
 			this.value = value;
 			this.operator = operator;
 			this.type = type;
 			this.column = column;
 		}
-		
-		public void encode(ByteStream output) {			
+
+		public void encode(SafeByteStream output) {
 			validate();
 
 			try {
-				output.writeBytes(HS.TOKEN_DELIMITER_AS_BYTES, false);
+				output.writeBytes(HSProto.TOKEN_DELIMITER_AS_BYTES, false);
 				output.writeBytes(type.getValue(), false);
-				output.writeBytes(HS.TOKEN_DELIMITER_AS_BYTES, false);
+				output.writeBytes(HSProto.TOKEN_DELIMITER_AS_BYTES, false);
 				output.writeBytes(operator.getValue(), false);
-				output.writeBytes(HS.TOKEN_DELIMITER_AS_BYTES, false);
+				output.writeBytes(HSProto.TOKEN_DELIMITER_AS_BYTES, false);
 				output.writeString(String.valueOf(indexDescriptor.getFilterColumnIndex(column)), false);
-				output.writeBytes(HS.TOKEN_DELIMITER_AS_BYTES, false);
-				output.writeString(value, true);			
+				output.writeBytes(HSProto.TOKEN_DELIMITER_AS_BYTES, false);
+				output.writeString(value, true);
 			} catch (IOException e) {
 				System.err.print(e.getMessage());
-			}			
+			}
 		}
-		
+
 		private void validate() {
 			if (value == null || operator == null || type == null || indexDescriptor.getColumnIndex(column) == -1) {
 				throw new IllegalArgumentException("invalid filter");
