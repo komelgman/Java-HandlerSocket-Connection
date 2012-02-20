@@ -18,16 +18,16 @@
 
 package kom.handlersocket.netty;
 
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelHandler.Sharable;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.oneone.OneToOneEncoder;
+import org.jboss.netty.channel.Channel;
+import org.jboss.netty.channel.ChannelHandler.Sharable;
+import org.jboss.netty.channel.ChannelHandlerContext;
+import org.jboss.netty.handler.codec.oneone.OneToOneEncoder;
 import kom.handlersocket.core.SafeByteStream;
 
 import java.nio.charset.Charset;
 
-import static io.netty.buffer.ChannelBuffers.copiedBuffer;
-import static io.netty.buffer.ChannelBuffers.wrappedBuffer;
+import static org.jboss.netty.buffer.ChannelBuffers.copiedBuffer;
+import static org.jboss.netty.buffer.ChannelBuffers.wrappedBuffer;
 
 @Sharable
 public class HSEncoder extends OneToOneEncoder {

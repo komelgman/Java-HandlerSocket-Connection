@@ -17,8 +17,8 @@
  */
 package kom.handlersocket.netty;
 
-import io.netty.buffer.ChannelBuffer;
-import io.netty.channel.*;
+import org.jboss.netty.buffer.ChannelBuffer;
+import org.jboss.netty.channel.*;
 import kom.handlersocket.HSConnection;
 
 import java.util.List;

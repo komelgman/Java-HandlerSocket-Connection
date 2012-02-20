@@ -18,9 +18,9 @@
 
 package kom.handlersocket;
 
-import io.netty.buffer.ChannelBuffer;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
+import org.jboss.netty.buffer.ChannelBuffer;
+import org.jboss.netty.channel.Channel;
+import org.jboss.netty.channel.ChannelFuture;
 import kom.handlersocket.query.HSAuthQuery;
 import kom.handlersocket.query.HSQuery;
 import kom.handlersocket.result.HSResultFuture;

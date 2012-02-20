@@ -18,7 +18,7 @@
 
 package kom.handlersocket.result;
 
-import io.netty.buffer.ChannelBuffer;
+import org.jboss.netty.buffer.ChannelBuffer;
 import kom.handlersocket.query.HSQuery;
 import kom.handlersocket.core.SafeByteStream;
 

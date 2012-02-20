@@ -17,14 +17,14 @@
  */
 package kom.handlersocket.netty;
 
-import io.netty.channel.ChannelPipeline;
-import io.netty.channel.ChannelPipelineFactory;
+import org.jboss.netty.channel.ChannelPipeline;
+import org.jboss.netty.channel.ChannelPipelineFactory;
 import kom.handlersocket.HSConnection;
 
-import static io.netty.channel.Channels.pipeline;
+import static org.jboss.netty.channel.Channels.pipeline;
 
 /**
- * Creates a newly configured {@link io.netty.channel.ChannelPipeline} for a new channel.
+ * Creates a newly configured {@link org.jboss.netty.channel.ChannelPipeline} for a new channel.
  */
 public class HSPipelineFactory implements
 		ChannelPipelineFactory {
@@ -35,7 +35,6 @@ public class HSPipelineFactory implements
 		this.connection = connection;
 	}
 
-	@Override
 	public ChannelPipeline getPipeline() throws Exception {
 		ChannelPipeline pipeline = pipeline();
 
