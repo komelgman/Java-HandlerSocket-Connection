@@ -52,16 +52,15 @@ public class SafeByteStream {
 		}
 	}
 
-	public synchronized void writeBytes(final byte[] b, boolean safe) throws IOException {
+	public synchronized void writeBytes(final byte[] b, boolean safe) {
 		_write(b, 0, b.length, safe);
 	}
 
-	public synchronized void writeBytes(final byte[] b, final int offset, final int length, boolean safe)
-			throws IOException {
+	public synchronized void writeBytes(final byte[] b, final int offset, final int length, boolean safe) {
 		_write(b, offset, length, safe);
 	}
 
-	public synchronized void writeString(String str, boolean safe) throws IOException {
+	public synchronized void writeString(String str, boolean safe) {
 		final byte[] b = str.getBytes(charset);
 		_write(b, 0, b.length, safe);
 	}

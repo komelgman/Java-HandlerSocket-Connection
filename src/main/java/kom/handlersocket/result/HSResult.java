@@ -18,42 +18,59 @@
 
 package kom.handlersocket.result;
 
-import org.jboss.netty.buffer.ChannelBuffer;
-import kom.handlersocket.query.HSQuery;
+import kom.handlersocket.HSIndexDescriptor;
+import kom.handlersocket.core.ResultType;
 import kom.handlersocket.core.SafeByteStream;
+import org.jboss.netty.buffer.ChannelBuffer;
 
 import java.nio.charset.Charset;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 public class HSResult {
-	private final HashMap<HSQuery, List<ChannelBuffer>> resultSet = new LinkedHashMap<HSQuery, List<ChannelBuffer>>();
+	private List<ChannelBuffer> data;
+	private Exception cause;
+
+	private final HSIndexDescriptor indexDescriptor;
+	private final ResultType resultType;
 	private final Charset charset;
 
-	public HSResult(Charset charset) {
+	public HSResult(HSIndexDescriptor indexDescriptor, ResultType resultType, Charset charset) {
+		this.indexDescriptor = indexDescriptor;
+		this.resultType = resultType;
 		this.charset = charset;
 	}
 
-	public void add(HSQuery query, List<ChannelBuffer> result) {
-		resultSet.put(query, result);
+	void setData(List<ChannelBuffer> data) {
+		this.data = data;
 	}
+
+	void setCause(Exception cause) {
+		this.cause = cause;
+	}
+
+
+
 
 	public void debug() {
 		SafeByteStream output = new SafeByteStream(1024, 65536, charset);
+//		query.encode(output);
+//
+//		System.out.print("query  >> ");
+//		System.out.print(new String(output.toByteArray(), charset));
 
-		for (Map.Entry<HSQuery, List<ChannelBuffer>> entry : resultSet.entrySet()) {
-			entry.getKey().encode(output);
-			System.out.print(new String(output.toByteArray(), charset));
-			output.reset();
-
-			for (ChannelBuffer buffer : entry.getValue()) {
+		if (data != null) {
+			System.out.print("result >> ");
+			for (ChannelBuffer buffer : data) {
 				System.out.print(buffer.toString(charset));
 				System.out.print("-");
 			}
-
-			System.out.println();
 		}
+
+		if (cause != null) {
+			System.out.print("cause  >> ");
+			System.out.print(cause.getMessage());
+		}
+
+		System.out.println();
 	}
 }

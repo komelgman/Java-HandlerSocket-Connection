@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright 2012 The Java HandlerSocket Connection Project
  *
  * https://github.com/komelgman/Java-HandlerSocket-Connection/
@@ -18,31 +18,71 @@
 
 package kom.handlersocket;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class HSIndexDescriptor {
-	protected final String indexId;
-	protected final String dbName;
-	protected final String tableName;
-	protected final String indexName;
-	protected final List<String> columns;
-	protected final List<String> filterColumns;
-	protected final List<String> indexColumns;
+/**
+ * From HS protocol description
+ *
+ * ----------------------------------------------------------------------------
+ * Opening index
+ *
+ * The 'open_index' request has the following syntax.
+ *
+ *    P <indexid> <dbname> <tablename> <indexname> <columns> [<fcolumns>]
+ *
+ * - <indexid> is a number in decimal.
+ * - <dbname>, <tablename>, and <indexname> are strings. To open the primary
+ *   key, use PRIMARY as <indexname>.
+ * - <columns> is a comma-separated list of column names.
+ * - <fcolumns> is a comma-separated list of column names. This parameter is
+ *  optional.
+ *
+ * Once an 'open_index' request is issued, the HandlerSocket plugin opens the
+ * specified index and keep it open until the client connection is closed. Each
+ * open index is identified by <indexid>. If <indexid> is already open, the old
+ * open index is closed. You can open the same combination of <dbname>
+ * <tablename> <indexname> multple times, possibly with different <columns>.
+ * For efficiency, keep <indexid> small as far as possible.
+ * ----------------------------------------------------------------------------
+ *
+ * HSIndexDescriptor class contains information about index according to the
+ * HS protocol description
+ */
 
-	protected static AtomicLong generator = new AtomicLong(0L);
+public class HSIndexDescriptor {
+	/**
+	 * The following fields are equivalent to the corresponding fields of the
+	 * protocol description
+	 */
+	private final String indexId;
+	private final String dbName;
+	private final String tableName;
+	private final String indexName;
+	private final List<String> columns;
+	private final List<String> filterColumns;
+
+	/**
+	 * This field ... todo
+	 */
+	private final List<String> indexColumns;
+
+	private static AtomicLong generator = new AtomicLong(0L);
 
 	public HSIndexDescriptor(String dbName, String tableName, String indexName, List<String> columns) {
 		this(generator.incrementAndGet(), dbName, tableName, indexName, columns, null, null);
 	}
 
 	public HSIndexDescriptor(String dbName, String tableName, String indexName, List<String> columns,
-	                         List<String> filterColumns) {
+			List<String> filterColumns) {
+
 		this(generator.incrementAndGet(), dbName, tableName, indexName, columns, filterColumns, null);
 	}
 
 	public HSIndexDescriptor(String dbName, String tableName, String indexName, List<String> columns,
-	                         List<String> filterColumns, List<String> indexColumns) {
+			List<String> filterColumns, List<String> indexColumns) {
+
 		this(generator.incrementAndGet(), dbName, tableName, indexName, columns, filterColumns, indexColumns);
 	}
 
@@ -51,12 +91,18 @@ public class HSIndexDescriptor {
 	}
 
 	public HSIndexDescriptor(long indexId, String dbName, String tableName, String indexName, List<String> columns,
-	                         List<String> filterColumns) {
+			List<String> filterColumns) {
+
 		this(indexId, dbName, tableName, indexName, columns, filterColumns, null);
 	}
 
 	public HSIndexDescriptor(long indexId, String dbName, String tableName, String indexName, List<String> columns,
-	                         List<String> filterColumns, List<String> indexColumns) {
+			List<String> filterColumns, List<String> indexColumns) {
+		
+		if (columns == null || tableName == null || indexName == null || dbName == null) {
+			throw new IllegalArgumentException();
+		}
+
 		this.indexId = Long.toString(indexId);
 
 		this.dbName = dbName;
@@ -87,20 +133,43 @@ public class HSIndexDescriptor {
 	public List<String> getColumns() {
 		return columns;
 	}
-
-	public int getColumnIndex(String name) {
-		return columns.indexOf(name);
-	}
-
+	
 	public List<String> getFilterColumns() {
 		return filterColumns;
 	}
+	
 
-	public int getFilterColumnIndex(String name) {
-		return filterColumns.indexOf(name);
+	
+	
+	public int getColumnPos(String name) {
+		return columns.indexOf(name);
 	}
 
-	public boolean isFilterColumns() {
+	public boolean hasColumn(String name) {
+		return columns.indexOf(name) != -1;
+	}
+
+	
+	
+
+	public int getFilterColumnPos(String name) {
+		return hasFilterColumns() ? filterColumns.indexOf(name) : -1;
+	}
+
+	public boolean hasFilterColumn(String name) {
+		return hasFilterColumns() && filterColumns.indexOf(name) != -1;
+	}
+
+	public boolean hasFilterColumns() {
 		return filterColumns != null;
+	}
+	
+	
+	public int getIndexColumnPos(String name) {
+		return indexColumns.indexOf(name);
+	}
+
+	public boolean hasIndexColumn(String name) {
+		return filterColumns.indexOf(name) != -1;
 	}
 }

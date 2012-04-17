@@ -19,49 +19,21 @@
 package kom.handlersocket.query;
 
 import kom.handlersocket.core.HSProto;
-import kom.handlersocket.core.SafeByteStream;
-import kom.handlersocket.core.CompareOperator;
-import kom.handlersocket.core.ResultType;
 
-import java.io.IOException;
-import java.security.InvalidParameterException;
 import java.util.Arrays;
 import java.util.List;
 
-public class HSDeleteQuery extends HSFindQuery {
-
+public class HSDeleteQuery extends HSModQuery {
 	public HSDeleteQuery() {
-		this(CompareOperator.GE, Arrays.asList(""), false);
-	}
-
-	public HSDeleteQuery(boolean returnData) {
-		this(CompareOperator.GE, Arrays.asList(""), returnData);
+		this(CompareOperator.GE, Arrays.asList(""));
 	}
 
 	public HSDeleteQuery(CompareOperator operator, List<String> conditions) {
-		this(operator, conditions, false);
-	}
-
-	public HSDeleteQuery(CompareOperator operator, List<String> conditions, boolean returnData) {
-		super(operator, conditions);
-		returnData(returnData);
+		super(HSProto.OPERATOR_DELETE, HSProto.OPERATOR_GET_AND_DELETE, operator, conditions, null);
 	}
 
 	@Override
-	protected void modify(SafeByteStream output) {
-		try {
-			output.writeBytes(HSProto.TOKEN_DELIMITER_AS_BYTES, false);
-
-			if (ResultType.MOD_OPERATION == resultType) {
-				output.writeBytes(HSProto.OPERATOR_DELETE, false);
-			} else if (ResultType.FIND_OPERATION == resultType) {
-				output.writeBytes(HSProto.OPERATOR_GET_AND_DELETE, false);
-			} else {
-				throw new InvalidParameterException("invalid result type for DELETE operation");
-			}
-
-		} catch (IOException e) {
-			System.err.print(e.getMessage());
-		}
+	public HSFindQuery values(List<String> values) {
+		throw new UnsupportedOperationException("can't perform this operation for DELETE query");
 	}
 }

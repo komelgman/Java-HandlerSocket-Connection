@@ -18,42 +18,31 @@
 
 package kom.handlersocket.netty;
 
-import org.jboss.netty.channel.Channel;
+import kom.handlersocket.core.SafeByteStream;
+import org.jboss.netty.channel.ChannelDownstreamHandler;
+import org.jboss.netty.channel.ChannelEvent;
 import org.jboss.netty.channel.ChannelHandler.Sharable;
 import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.handler.codec.oneone.OneToOneEncoder;
-import kom.handlersocket.core.SafeByteStream;
+import org.jboss.netty.channel.MessageEvent;
 
-import java.nio.charset.Charset;
-
-import static org.jboss.netty.buffer.ChannelBuffers.copiedBuffer;
 import static org.jboss.netty.buffer.ChannelBuffers.wrappedBuffer;
+import static org.jboss.netty.channel.Channels.write;
 
 @Sharable
-public class HSEncoder extends OneToOneEncoder {
-
-	private final Charset charset;
-
-	public HSEncoder() {
-		this(Charset.defaultCharset());
-	}
-
-	public HSEncoder(Charset charset) {
-		if (charset == null) {
-			throw new NullPointerException("charset");
-		}
-		this.charset = charset;
-	}
-
-	@Override
-	protected Object encode(ChannelHandlerContext ctx, Channel channel, Object msg) throws Exception {
-		if (msg instanceof SafeByteStream) {
-			return wrappedBuffer(((SafeByteStream) msg).toByteArray());
-		} else if (msg instanceof String) {
-			// String message
-			return copiedBuffer((String) msg, charset);
+public class HSEncoder implements ChannelDownstreamHandler {
+	public void handleDownstream(ChannelHandlerContext ctx, ChannelEvent evt) throws Exception {
+		if (!(evt instanceof MessageEvent)) {
+			ctx.sendDownstream(evt);
+			return;
 		}
 
-		return msg;
+		final MessageEvent e = (MessageEvent) evt;		
+		final Object originalMessage = e.getMessage();
+		
+		if (originalMessage instanceof SafeByteStream) {
+			write(ctx, e.getFuture(), wrappedBuffer(((SafeByteStream) originalMessage).toByteArray()), e.getRemoteAddress());
+		} else {
+			ctx.sendDownstream(evt);
+		}
 	}
 }

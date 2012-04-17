@@ -19,22 +19,17 @@
 package kom.handlersocket.query;
 
 import kom.handlersocket.core.HSProto;
-import kom.handlersocket.HSIndexDescriptor;
-import kom.handlersocket.core.SafeByteStream;
 import kom.handlersocket.core.ResultType;
+import kom.handlersocket.core.SafeByteStream;
 
-import java.io.IOException;
 import java.security.InvalidParameterException;
 
 public class HSOpenIndexQuery extends HSQuery {
 
-	public HSOpenIndexQuery() {
-		this(null);
-	}
+	private static final byte[] COMMA_DELIMITER = new byte[]{','};
 
-	public HSOpenIndexQuery(HSIndexDescriptor indexDescriptor) {
+	public HSOpenIndexQuery() {
 		super(ResultType.SIMPLE);
-		this.indexDescriptor = indexDescriptor;
 	}
 
 	@Override
@@ -43,29 +38,23 @@ public class HSOpenIndexQuery extends HSQuery {
 			throw new InvalidParameterException("indexDescriptor can't be null");
 		}
 
-		try {
-			output.writeBytes(HSProto.OPERATOR_OPEN_INDEX, false);
-			output.writeBytes(HSProto.TOKEN_DELIMITER_AS_BYTES, false);
-			output.writeString(indexDescriptor.getIndexId(), false);
-			output.writeBytes(HSProto.TOKEN_DELIMITER_AS_BYTES, false);
-			output.writeString(indexDescriptor.getDbName(), true);
-			output.writeBytes(HSProto.TOKEN_DELIMITER_AS_BYTES, false);
-			output.writeString(indexDescriptor.getTableName(), true);
-			output.writeBytes(HSProto.TOKEN_DELIMITER_AS_BYTES, false);
-			output.writeString(indexDescriptor.getIndexName(), true);
-			output.writeBytes(HSProto.TOKEN_DELIMITER_AS_BYTES, false);
-			output.writeStrings(indexDescriptor.getColumns(), new byte[]{','}, true);
+		output.writeBytes(HSProto.OPERATOR_OPEN_INDEX, false);
+		output.writeBytes(HSProto.TOKEN_DELIMITER_AS_BYTES, false);
+		output.writeString(indexDescriptor.getIndexId(), false);
+		output.writeBytes(HSProto.TOKEN_DELIMITER_AS_BYTES, false);
+		output.writeString(indexDescriptor.getDbName(), true);
+		output.writeBytes(HSProto.TOKEN_DELIMITER_AS_BYTES, false);
+		output.writeString(indexDescriptor.getTableName(), true);
+		output.writeBytes(HSProto.TOKEN_DELIMITER_AS_BYTES, false);
+		output.writeString(indexDescriptor.getIndexName(), true);
+		output.writeBytes(HSProto.TOKEN_DELIMITER_AS_BYTES, false);
+		output.writeStrings(indexDescriptor.getColumns(), new byte[]{','}, true);
 
-			if (indexDescriptor.isFilterColumns()) {
-				output.writeBytes(HSProto.TOKEN_DELIMITER_AS_BYTES, false);
-				output.writeStrings(indexDescriptor.getFilterColumns(), new byte[]{','}, true);
-			}
-
-			output.writeBytes(HSProto.PACKET_DELIMITER_AS_BYTES, false);
-
-		} catch (IOException e) {
-			System.err.print(e.getMessage());
+		if (indexDescriptor.hasFilterColumns()) {
+			output.writeBytes(HSProto.TOKEN_DELIMITER_AS_BYTES, false);
+			output.writeStrings(indexDescriptor.getFilterColumns(), COMMA_DELIMITER, true);
 		}
 
+		output.writeBytes(HSProto.PACKET_DELIMITER_AS_BYTES, false);
 	}
 }

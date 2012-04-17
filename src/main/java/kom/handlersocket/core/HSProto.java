@@ -18,7 +18,10 @@
 
 package kom.handlersocket.core;
 
-public interface HSProto {
+public final class HSProto {
+
+	private HSProto() { throw new IllegalAccessError(); }
+
 	public static final byte PACKET_DELIMITER = '\n';
 	public static final byte[] PACKET_DELIMITER_AS_BYTES = new byte[]{'\n'};
 	public static final byte TOKEN_DELIMITER = '\t';

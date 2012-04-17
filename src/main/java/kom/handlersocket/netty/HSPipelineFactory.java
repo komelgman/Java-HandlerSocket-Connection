@@ -17,17 +17,17 @@
  */
 package kom.handlersocket.netty;
 
+import kom.handlersocket.HSConnection;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
-import kom.handlersocket.HSConnection;
+import org.jboss.netty.handler.execution.ExecutionHandler;
 
 import static org.jboss.netty.channel.Channels.pipeline;
 
 /**
  * Creates a newly configured {@link org.jboss.netty.channel.ChannelPipeline} for a new channel.
  */
-public class HSPipelineFactory implements
-		ChannelPipelineFactory {
+public class HSPipelineFactory implements ChannelPipelineFactory {
 
 	private final HSConnection connection;
 
@@ -39,9 +39,9 @@ public class HSPipelineFactory implements
 		ChannelPipeline pipeline = pipeline();
 
 		pipeline.addLast("decoder", new HSDecoder());
-		pipeline.addLast("encoder", new HSEncoder(connection.getCharset()));
+		pipeline.addLast("encoder", new HSEncoder());
 
-		pipeline.addLast("handler", new HSHandler(connection));
+		pipeline.addLast("logic", new HSHandler(connection));
 
 		return pipeline;
 	}

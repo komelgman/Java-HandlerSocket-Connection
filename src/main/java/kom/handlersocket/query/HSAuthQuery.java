@@ -18,12 +18,10 @@
 
 package kom.handlersocket.query;
 
-import kom.handlersocket.core.HSProto;
 import kom.handlersocket.HSIndexDescriptor;
-import kom.handlersocket.core.SafeByteStream;
+import kom.handlersocket.core.HSProto;
 import kom.handlersocket.core.ResultType;
-
-import java.io.IOException;
+import kom.handlersocket.core.SafeByteStream;
 
 public class HSAuthQuery extends HSQuery {
 
@@ -37,16 +35,12 @@ public class HSAuthQuery extends HSQuery {
 
 	@Override
 	public void encode(final SafeByteStream output) {
-		try {
-			output.writeBytes(HSProto.OPERATOR_AUTH, false);
-			output.writeBytes(HSProto.TOKEN_DELIMITER_AS_BYTES, false);
-			output.writeBytes(this.type, false);
-			output.writeBytes(HSProto.TOKEN_DELIMITER_AS_BYTES, false);
-			output.writeString(this.secret, true);
-			output.writeBytes(HSProto.PACKET_DELIMITER_AS_BYTES, false);
-		} catch (IOException e) {
-			System.err.print(e.getMessage());
-		}
+		output.writeBytes(HSProto.OPERATOR_AUTH, false);
+		output.writeBytes(HSProto.TOKEN_DELIMITER_AS_BYTES, false);
+		output.writeBytes(this.type, false);
+		output.writeBytes(HSProto.TOKEN_DELIMITER_AS_BYTES, false);
+		output.writeString(this.secret, true);
+		output.writeBytes(HSProto.PACKET_DELIMITER_AS_BYTES, false);
 	}
 
 	@Override

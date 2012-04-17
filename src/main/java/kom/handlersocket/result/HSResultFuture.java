@@ -19,77 +19,92 @@
 package kom.handlersocket.result;
 
 import org.jboss.netty.buffer.ChannelBuffer;
-import kom.handlersocket.query.HSQuery;
 
-import java.nio.charset.Charset;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 public class HSResultFuture {
 
 	private boolean isReady = false;
-	private boolean isTimeout = false;
 
-	private HSResult result = null;
-	private LinkedList<HSQuery> queries;
-	private Charset charset;
+	private final LinkedList<HSResult> resultSet;
+	private final Iterator<HSResult> resultSetIterator;
+	private Exception cause = null;
+
+	private final long defaultTimeout = 5000;
 
 
-	public HSResultFuture(List<HSQuery> queries, Charset charset) {
-		this.charset = charset;
-		this.queries = new LinkedList<HSQuery>(queries);
+	public HSResultFuture(LinkedList<HSResult> resultSet) {
+		this.resultSet = resultSet;
+		this.resultSetIterator = resultSet.iterator();
 	}
 
-	public HSResult get() {
-		return get(5000, TimeUnit.MILLISECONDS);
+	public LinkedList<HSResult> get() {
+		return get(defaultTimeout, TimeUnit.MILLISECONDS);
 	}
 
-	public HSResult get(long timeout) {
+	public LinkedList<HSResult> get(long timeout) {
 		return get(timeout, TimeUnit.MILLISECONDS);
 	}
 
-	public synchronized HSResult get(long timeout, TimeUnit unit) {
+	public synchronized LinkedList<HSResult> get(long timeout, TimeUnit unit) {
 		if (!TimeUnit.MILLISECONDS.equals(unit)) {
 			timeout = TimeUnit.MILLISECONDS.convert(timeout, unit);
 		}
 
-		while (!isReady && !isTimeout) {
+		while (!isReady && (cause == null)) {
 			try {
 				wait(timeout);
-				isTimeout = true;
+				
+				if (cause == null) {
+					cause = new TimeoutException("request reset by timeout");
+				}
 			} catch (InterruptedException e) {
 				// ignore
 			}
 		}
 
 		if (!isReady) {
-			if (result == null) {
-				result = new HSResult(charset);
+			while (resultSetIterator.hasNext()) {
+				resultSetIterator.next().setCause(cause);
 			}
 
-			// result.setException(new TimeoutException());
+			isReady = true;
 		}
 
-		return result;
+		return resultSet;
 	}
 
 	public synchronized void addResult(List<ChannelBuffer> data) {
-		if (!isTimeout) {
-			if (result == null) {
-				result = new HSResult(charset);
-			}
+		if (!isReady) {
+			resultSetIterator.next().setData(data);
 
-			result.add(queries.removeFirst(), data);
-
-			if (queries.size() == 0) {
-				this.isReady = true;
+			if (!resultSetIterator.hasNext()) {
+				isReady = true;
 				notifyAll();
 			}
 		}
 	}
 
+	public synchronized void setCause(Exception cause) {
+		if (this.cause == null) {
+			this.cause = cause;
+			notifyAll();
+		}
+	}
+
 	public synchronized boolean isReady() {
 		return isReady;
+	}
+	
+	public synchronized boolean isSuccess() {
+		return isReady && (cause == null);
+	}
+
+	public synchronized Exception getCause() {
+		return cause;
 	}
 }

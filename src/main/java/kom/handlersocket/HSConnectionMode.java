@@ -20,5 +20,6 @@ package kom.handlersocket;
 
 public enum HSConnectionMode {
 	READ_ONLY,
-	READ_WRITE
+	READ_WRITE,
+	WRITE_ONLY
 }

@@ -19,8 +19,8 @@
 package kom.handlersocket.query;
 
 import kom.handlersocket.HSIndexDescriptor;
-import kom.handlersocket.core.SafeByteStream;
 import kom.handlersocket.core.ResultType;
+import kom.handlersocket.core.SafeByteStream;
 
 import java.security.InvalidParameterException;
 
@@ -43,7 +43,7 @@ abstract public class HSQuery {
 		encode(output);
 	}
 
-	abstract public void encode(final SafeByteStream output);
+	abstract protected void encode(final SafeByteStream output);
 
 	public ResultType resultType() {
 		return resultType;

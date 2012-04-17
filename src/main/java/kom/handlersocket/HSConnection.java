@@ -18,24 +18,23 @@
 
 package kom.handlersocket;
 
+import kom.handlersocket.core.SafeByteStream;
+import kom.handlersocket.query.HSQuery;
+import kom.handlersocket.result.HSResult;
+import kom.handlersocket.result.HSResultFuture;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
-import kom.handlersocket.query.HSAuthQuery;
-import kom.handlersocket.query.HSQuery;
-import kom.handlersocket.result.HSResultFuture;
-import kom.handlersocket.core.SafeByteStream;
 
 import java.nio.charset.Charset;
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 public class HSConnection {
+	private Charset charset;	
 	private Channel channel;
-	private Charset charset;
 
-	private LinkedList<HSResultFuture> pendingResults = new LinkedList<HSResultFuture>();
+	private final LinkedList<HSResultFuture> pendingResults = new LinkedList<HSResultFuture>();
+	private final LinkedList<PendingQueries> pendingQueries = new LinkedList<PendingQueries>();
 	private HSResultFuture currentResultFuture = null;
 
 	public HSConnection() {
@@ -46,40 +45,65 @@ public class HSConnection {
 		this.charset = charset;
 	}
 
-	public synchronized HSResultFuture execute(HSAuthQuery query) {
-		return execute(null, Arrays.asList((HSQuery) query));
+	public HSConnection addQuery(HSIndexDescriptor indexDescriptor, HSQuery query) {
+		return addQueries(indexDescriptor, Arrays.asList(query));
 	}
 
-	public synchronized HSResultFuture execute(HSIndexDescriptor indexDescriptor, HSQuery query) {
-		return execute(indexDescriptor, Arrays.asList(query));
+	public HSConnection addQueries(HSIndexDescriptor indexDescriptor, final HSQuery... queries) {
+		return addQueries(indexDescriptor, Arrays.asList(queries));
 	}
 
-	public synchronized HSResultFuture execute(HSIndexDescriptor indexDescriptor, List<HSQuery> queries) {
-		final SafeByteStream packet = new SafeByteStream(queries.size() * 128, 65536, charset);
+	public HSConnection addQueries(HSIndexDescriptor indexDescriptor, final List<? extends HSQuery> queries) {
+		synchronized (pendingQueries) {
+			pendingQueries.add(new PendingQueries(indexDescriptor, queries));
+		}
+		
+		return this;
+	}
 
-		for (HSQuery query : queries) {
-			query.encode(indexDescriptor, packet);
+	public HSResultFuture execute() {
+		final LinkedList<PendingQueries> pendingQueries = getPendingQueries();
+		final SafeByteStream packet = new SafeByteStream(pendingQueries.size() * 64, 65536, charset);
+		final LinkedList<HSResult> resultSet = new LinkedList<HSResult>();
+
+		for (PendingQueries entry : pendingQueries) {
+			for (HSQuery query : entry.queries) {
+				resultSet.add(new HSResult(entry.indexDescriptor, query.resultType(), charset));
+				query.encode(entry.indexDescriptor, packet);
+			}
 		}
 
-		channel.write(packet);
+		final HSResultFuture resultFuture = new HSResultFuture(resultSet);
 
-		return addResultFuture(queries);
-	}
+		synchronized (pendingResults) {
+			pendingResults.addFirst(resultFuture);
+			channel.write(packet);
+		}
 
-	private HSResultFuture addResultFuture(List<HSQuery> queries) {
-		HSResultFuture resultFuture = new HSResultFuture(queries, charset);
-		pendingResults.addFirst(resultFuture);
 		return resultFuture;
 	}
 
-	public synchronized void response(List<List<ChannelBuffer>> responses) {
-		for (List<ChannelBuffer> response : responses) {
-			if (currentResultFuture == null || currentResultFuture.isReady()) {
-				currentResultFuture = pendingResults.removeLast();
-			}
+	private LinkedList<PendingQueries> getPendingQueries() {
+		final LinkedList<PendingQueries> result;
 
-			currentResultFuture.addResult(response);
+		synchronized (pendingQueries) {
+			result = (LinkedList<PendingQueries>)pendingQueries.clone();
+			pendingQueries.clear();
 		}
+
+		return result;
+	}
+
+	public void response(List<List<ChannelBuffer>> data) {
+		synchronized (pendingResults) {
+			for (List<ChannelBuffer> entity : data) {
+				if (currentResultFuture == null || currentResultFuture.isReady()) {				
+					currentResultFuture = pendingResults.removeLast();
+				}
+	
+				currentResultFuture.addResult(entity);
+			}	
+		}		
 	}
 
 	public void setChannel(Channel channel) {
@@ -100,5 +124,18 @@ public class HSConnection {
 
 	public void setCharset(Charset charset) {
 		this.charset = charset;
+	}
+
+
+
+
+	private class PendingQueries {
+		public final HSIndexDescriptor indexDescriptor;
+		public final List<? extends HSQuery> queries;
+
+		public PendingQueries(HSIndexDescriptor indexDescriptor, List<? extends HSQuery> queries) {
+			this.indexDescriptor = indexDescriptor;
+			this.queries = queries;
+		}
 	}
 }

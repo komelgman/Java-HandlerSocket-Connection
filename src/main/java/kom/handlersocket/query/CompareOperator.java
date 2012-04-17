@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package kom.handlersocket.core;
+package kom.handlersocket.query;
 
 
 public enum CompareOperator {

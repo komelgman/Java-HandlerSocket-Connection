@@ -25,46 +25,48 @@ import kom.handlersocket.core.SafeByteStream;
 import java.security.InvalidParameterException;
 import java.util.List;
 
-public class HSInsertQuery extends HSQuery {
-
+public abstract class HSModQuery extends HSFindQuery {
 	protected List<String> values;
+	protected final byte[] modOperator;
+	protected final byte[] findOperator;
 
-	public HSInsertQuery() {
-		this(null);
-	}
+	public HSModQuery(byte[] modOperator, byte[] findOperator, CompareOperator operator, List<String> conditions, List<String> values) {
+		super(operator, conditions);
 
-	public HSInsertQuery(List<String> values) {
-		super(ResultType.INSERT_OPERATION);
 		this.values = values;
+		this.modOperator = modOperator;
+		this.findOperator = findOperator;
+
+		returnData(false);
 	}
 
 	@Override
-	public void encode(SafeByteStream output) {
-		if (null == values) {
-			throw new InvalidParameterException("values can't be null");
+	protected void modify(SafeByteStream output) {
+		output.writeBytes(HSProto.TOKEN_DELIMITER_AS_BYTES, false);
+
+		if (ResultType.MOD_OPERATION == resultType) {
+			output.writeBytes(modOperator, false);
+		} else if (ResultType.FIND_OPERATION == resultType) {
+			output.writeBytes(findOperator, false);
+		} else {
+			throw new InvalidParameterException("invalid result type for MOD operation");
 		}
 
-		if (null == indexDescriptor) {
-			throw new InvalidParameterException("indexDescriptor can't be null");
-		}
-
-		output.writeString(indexDescriptor.getIndexId(), false);
-		output.writeBytes(HSProto.TOKEN_DELIMITER_AS_BYTES, false);
-		output.writeBytes(HSProto.OPERATOR_INSERT, false);
-		output.writeBytes(HSProto.TOKEN_DELIMITER_AS_BYTES, false);
-		output.writeString(String.valueOf(values.size()), false);
 		output.writeBytes(HSProto.TOKEN_DELIMITER_AS_BYTES, false);
 		output.writeStrings(values, HSProto.TOKEN_DELIMITER_AS_BYTES, true);
-		output.writeBytes(HSProto.PACKET_DELIMITER_AS_BYTES, false);
 	}
 
-	public HSInsertQuery values(List<String> values) {
+	public HSFindQuery values(List<String> values) {
 		if (null == values) {
-			throw new InvalidParameterException("values can't be null");
+			throw new InvalidParameterException("values can't be NULL");
 		}
 
 		this.values = values;
+		return this;
+	}
 
+	public HSFindQuery returnData(boolean value) {
+		resultType = value ? ResultType.FIND_OPERATION : ResultType.MOD_OPERATION;
 		return this;
 	}
 }
