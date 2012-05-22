@@ -1,4 +1,4 @@
-HSCoonection project
+HSConnection project
 ====================
 HandlerSocket-Connection is a HandlerSocket client for java.
 
